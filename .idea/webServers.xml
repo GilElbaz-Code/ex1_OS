@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="60ed01b3-cbbe-4c57-9829-59fa52205729" name="planet.cs.biu.ac.il" url="">
+        <fileTransfer rootFolder="/v/students/" accessType="SFTP" host="planet.cs.biu.ac.il" port="22" sshConfigId="3a204820-3eb7-4078-8f5f-80eff9b154a2" sshConfig="elbazgi1@planet.cs.biu.ac.il:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -1,0 +1,3 @@
+/cygdrive/c/Users/Gil/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu20.04onWindows_79rhkp1fndgsc/LocalState/rootfs/home/gil/ex1_OS/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/cygdrive/c/Users/Gil/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu20.04onWindows_79rhkp1fndgsc/LocalState/rootfs/home/gil/ex1_OS/cmake-build-debug/CMakeFiles/edit_cache.dir
+/cygdrive/c/Users/Gil/AppData/Local/Packages/CanonicalGroupLimited.Ubuntu20.04onWindows_79rhkp1fndgsc/LocalState/rootfs/home/gil/ex1_OS/cmake-build-debug/CMakeFiles/ex1_OS.dir
