@@ -77,8 +77,7 @@ void change_directory(const char *arg) {
     } else if (!(strcmp(arg, "-"))) {
         char *last_path = top(paths);
         if (last_path == NULL) {
-            // Todo: Fix comment
-            perror("Error has occurred");
+            printf("An error occurred \n");
             return;
         }
         chdir(last_path);
@@ -86,7 +85,7 @@ void change_directory(const char *arg) {
         return;
     }
     if (chdir(arg) < 0)
-        perror("No such file or directory: ");
+        printf("Too many arguments \n");
     else {
         push(paths, cwd);
     }
