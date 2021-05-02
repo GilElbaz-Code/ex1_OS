@@ -26,33 +26,42 @@ struct stack_t {
 };
 
 // Declaring functions
+
+// Parse and Execute
 void execute(char **argv);
-
 void parse(char *line, char **argv);
-
+//----------------------------------
+// Stack Functions
 void change_directory(const char *arg);
-
 void pop(struct stack_t *theStack);
-
 char *top(struct stack_t *theStack);
-
 void push(struct stack_t *theStack, const char *value);
-
 void destroyStack(struct stack_t **theStack);
-
 struct stack_t *newStack(void);
-
 struct stack_t *paths = NULL;
+//---------------------------------
+void display_history();
+// global variables
+int counter = 0;
+int status = 0;
+int pids[MAX];
+char* history[MAX];
+void jobs();
 
 // Main
 int main() {
     paths = newStack();
-    char input[MAX];
-    char *argv[MAX / 2 + 1];
+    char input[MAX]; // Array of the "raw" input
+    char *argv[MAX]; // Array for each command
+    char* str;
     while (1) {
         printf("$ ");
         fflush(stdout);
         fgets(input, 100, stdin);
+        str = (char*)malloc((strlen(input) + 1) * sizeof(char));
+        strcpy(str, input);
+        history[counter] = str;
+        counter++;
         input[strcspn(input, "\n")] = '\0';
         parse(input, argv);
         if (strcmp(argv[0], "exit") == 0) {
@@ -60,18 +69,54 @@ int main() {
             exit(0);
         } else if (strcmp(argv[0], "cd") == 0) {
             change_directory(argv[1]);
-        } else {
+        }
+        else if (strcmp(argv[0],"jobs") == 0){
+            jobs();
+        }
+        else if (strcmp(argv[0],"history") == 0){
+            display_history();
+        }
+        else {
             execute(argv);
         }
 
     }
 }
 
+void jobs(){
+    int j;
+    for (j = 0; j < counter; j++) {
+        //procces is running
+        if(waitpid(pids[j],&status,WNOHANG) == 0){
+            printf("%d %s\n", pids[j], history[j]);
+        }
+    }
+    //updating the pid of the procces
+    pids[counter] =(int)getpid();
+    counter++;
+}
+
+void display_history(){
+    pids[counter] = (int)getpid();
+    counter++;
+    for (int j = 0; j < counter; j++){
+        if(waitpid(pids[j],&status,WNOHANG) == 0 ||
+           (j == counter - 1 && strcmp((char*)history[j],"history") == 0)){
+            printf("%d %s RUNNING\n", pids[j], history[j]);
+        } else {
+            //done
+            printf("%d %s DONE\n", pids[j], history[j]);
+        }
+    }
+}
+
 void change_directory(const char *arg) {
+    pids[counter] = (int)getpid();
+    counter++;
     char cwd[256] = {0};
     getcwd(cwd, 256);
     char *home_dir = "/home";
-    if ((arg == NULL) || (!(strcmp(arg, "~") && strcmp(arg, "~/")))) {
+    if ((arg == NULL) || (!(strcmp(arg, "~") != 0 && strcmp(arg, "~/") != 0))) {
         chdir(home_dir);
         return;
     } else if (!(strcmp(arg, "-"))) {
@@ -114,11 +159,11 @@ void execute(char **argv) {
     int status;
 
     if ((pid = fork()) < 0) {
-        printf("fork failed");
+        printf("fork failed \n");
         exit(0);
     } else if (pid == 0) {
         if (execvp(*argv, argv) < 0) {
-            printf("exec failed");
+            printf("exec failed \n");
             exit(0);
         }
     }
@@ -208,3 +253,7 @@ void destroyStack(struct stack_t **theStack) {
     free(*theStack);
     *theStack = NULL;
 }
+
+
+
+

@@ -1,1 +1,1 @@
-/usr/bin/gcc.exe -g  -Wl,--enable-auto-import CMakeFiles/ex1_OS.dir/ex1.c.o  -o ex1_OS.exe -Wl,--out-implib,libex1_OS.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
+/usr/bin/gcc.exe -g -Wl,--enable-auto-import CMakeFiles/ex1_OS.dir/ex1.c.o -o ex1_OS.exe -Wl,--out-implib,libex1_OS.dll.a -Wl,--major-image-version,0,--minor-image-version,0 
