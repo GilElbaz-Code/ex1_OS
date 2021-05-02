@@ -51,6 +51,8 @@ pid_t val;
 int pids[MAX];
 char* history[MAX];
 void jobs();
+void background(char** argv);
+void foreground(char** argv);
 
 // Main
 int main() {
@@ -68,22 +70,25 @@ int main() {
         history[counter] = str;
         counter++;
         parse(input, argv);
-        if (strcmp(argv[0], "exit") == 0) {
-            destroyStack(&paths);
-            exit(0);
-        } else if (strcmp(argv[0], "cd") == 0) {
-            change_directory(argv[1]);
-        }
-        else if (strcmp(argv[0],"jobs") == 0){
+        if (strcmp(argv[0],"jobs") == 0){
             jobs();
         }
         else if (strcmp(argv[0],"history") == 0){
             display_history();
         }
-        else {
-            execute(argv);
+        else if (strcmp(argv[0], "cd") == 0) {
+            change_directory(argv[1]);
         }
-
+        else if(*argv[size -1] == '&'){
+            background(argv);
+        }
+        else if (strcmp(argv[0], "exit") == 0) {
+            destroyStack(&paths);
+            exit(0);
+        }
+        else {
+            foreground(argv);
+        }
     }
 }
 
@@ -92,7 +97,7 @@ void jobs(){
     for (j = 0; j < counter; j++) {
         //procces is running
         if(waitpid(pids[j],&status,WNOHANG) == 0){
-            printf("%d %s\n", pids[j], history[j]);
+            printf("%s\n",history[j]);
         }
     }
     //updating the pid of the procces
