@@ -44,6 +44,10 @@ void display_history();
 // global variables
 int counter = 0;
 int status = 0;
+int child = 0;
+int size = 0;
+int pid = 0;
+pid_t val;
 int pids[MAX];
 char* history[MAX];
 void jobs();
@@ -59,10 +63,10 @@ int main() {
         fflush(stdout);
         fgets(input, 100, stdin);
         str = (char*)malloc((strlen(input) + 1) * sizeof(char));
+        input[strcspn(input, "\n")] = '\0';
         strcpy(str, input);
         history[counter] = str;
         counter++;
-        input[strcspn(input, "\n")] = '\0';
         parse(input, argv);
         if (strcmp(argv[0], "exit") == 0) {
             destroyStack(&paths);
@@ -96,16 +100,64 @@ void jobs(){
     counter++;
 }
 
+void foreground(char** line) {
+    int ret_code;
+    val = fork();
+    pids[counter] = (int)val;
+    counter++;
+    if (val == 0) {
+        //in child
+        child = 1;
+        pid = (int)getpid();
+        printf("%d\n", pid);
+        ret_code = execvp(line[0], line);
+        if (ret_code == -1) {
+            fprintf(stderr, "Error in system call\n");
+        } else {
+            printf("exec succeed\n");
+        }
+
+    } else if (val < 0) {
+        fprintf(stderr, "Error in system call\n");
+    } else {
+        //in father
+        wait(&ret_code);
+
+    }
+}
+
+void background(char** line){
+    int ret_code;
+    pid_t val;
+    val = fork();
+    pids[counter] = (int)val;
+    counter++;
+    if(val == 0){
+        //in child
+        child = 1;
+        printf("%d\n", (int)getpid());
+        //remove the '&' from the command
+        line[size - 1] = NULL;
+        ret_code = execvp(line[0], line);
+        if(ret_code == -1){
+            fprintf(stderr,"Error ib system call\n");
+        } else{
+            printf("exec succeed\n");
+        }
+    }
+}
+
+
 void display_history(){
     pids[counter] = (int)getpid();
-    counter++;
+    //counter++;
     for (int j = 0; j < counter; j++){
         if(waitpid(pids[j],&status,WNOHANG) == 0 ||
            (j == counter - 1 && strcmp((char*)history[j],"history") == 0)){
-            printf("%d %s RUNNING\n", pids[j], history[j]);
+            printf("%s RUNNING\n", history[j]);
         } else {
             //done
-            printf("%d %s DONE\n", pids[j], history[j]);
+            printf("%s DONE\n", history[j]);
         }
     }
 }
