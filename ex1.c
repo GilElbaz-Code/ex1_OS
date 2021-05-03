@@ -27,7 +27,6 @@ struct stack_t {
 // Declaring functions
 
 // Parse and Execute
-void execute(char **argv);
 
 int parse(char *line, char **argv);
 
@@ -48,19 +47,14 @@ struct stack_t *newStack(void);
 struct stack_t *paths = NULL;
 
 //---------------------------------
-char **split_line(char *line);
-
-void print_echo(char **text);
 
 void display_history();
 
 // global variables
-int counter = 0, status = 0, size = 0, child = 0;
-int echo_counter = 0;
+int counter = 0, status = 0;
 pid_t val;
 int pids[MAX];
 char *history[MAX];
-char **echo;
 
 void jobs();
 
