@@ -7,7 +7,6 @@
 
 #define MAX 100
 
-
 /**
  * Type for individual stack entry
  */
@@ -29,136 +28,182 @@ struct stack_t {
 
 // Parse and Execute
 void execute(char **argv);
-void parse(char *line, char **argv);
+
+int parse(char *line, char **argv);
+
 //----------------------------------
 // Stack Functions
 void change_directory(const char *arg);
+
 void pop(struct stack_t *theStack);
+
 char *top(struct stack_t *theStack);
+
 void push(struct stack_t *theStack, const char *value);
+
 void destroyStack(struct stack_t **theStack);
+
 struct stack_t *newStack(void);
+
 struct stack_t *paths = NULL;
+
 //---------------------------------
+char **split_line(char *line);
+
+void print_echo(char **text);
+
 void display_history();
+
 // global variables
-int counter = 0;
-int status = 0;
-int child = 0;
-int size = 0;
-int pid = 0;
+int counter = 0, status = 0, size = 0, child = 0;
+int echo_counter = 0;
 pid_t val;
 int pids[MAX];
-char* history[MAX];
+char *history[MAX];
+char **echo;
+
 void jobs();
-void background(char** argv);
-void foreground(char** argv);
+
+void background(char **line, int length);
+
+int foreground(char **line);
+
+void display_echo(char **args, int length);
+
+void free_history();
 
 // Main
 int main() {
     paths = newStack();
     char input[MAX]; // Array of the "raw" input
     char *argv[MAX]; // Array for each command
-    char* str;
+    char *str;
+    int length = 0;
+    int foreground_ret = 0;
     while (1) {
         printf("$ ");
         fflush(stdout);
         fgets(input, 100, stdin);
-        str = (char*)malloc((strlen(input) + 1) * sizeof(char));
+        str = (char *) malloc((strlen(input) + 1) * sizeof(char));
         input[strcspn(input, "\n")] = '\0';
         strcpy(str, input);
         history[counter] = str;
-        counter++;
-        parse(input, argv);
-        if (strcmp(argv[0],"jobs") == 0){
+        length = parse(input, argv);
+        if (length <= 0)
+            continue;
+        if (strcmp(argv[0], "jobs") == 0) {
             jobs();
-        }
-        else if (strcmp(argv[0],"history") == 0){
+        } else if (strcmp(argv[0], "history") == 0) {
             display_history();
-        }
-        else if (strcmp(argv[0], "cd") == 0) {
+        } else if (strcmp(argv[0], "cd") == 0) {
             change_directory(argv[1]);
-        }
-        else if(*argv[size -1] == '&'){
-            background(argv);
-        }
-        else if (strcmp(argv[0], "exit") == 0) {
+        } else if (strcmp(argv[0], "echo") == 0) {
+            display_echo(argv, length);
+        } else if (strcmp(argv[length - 1], "&") == 0) {
+            background(argv, length);
+        } else if (strcmp(argv[0], "exit") == 0) {
             destroyStack(&paths);
+            free_history();
             exit(0);
-        }
-        else {
-            foreground(argv);
+        } else {
+            // replacing execute
+            foreground_ret = foreground(argv);
+            if (foreground_ret == 0) {
+                break;
+            }
         }
     }
 }
 
-void jobs(){
+void free_history() {
+    int i;
+    for (i = 0; i < counter; i++) {
+        free(history[i]);
+    }
+}
+
+void display_echo(char **args, int length) {
+    int i;
+    const char ignore[2] = "\"";
+    char *token;
+    for (i = 1; i < length; i++) {
+
+        token = strtok(args[i], ignore);
+        while (token != NULL) {
+            printf("%s", token);
+            fflush(stdout);
+            token = strtok(NULL, ignore);
+        }
+        printf(" ");
+        fflush(stdout);
+    }
+    printf("\n");
+}
+
+void jobs() {
     int j;
     for (j = 0; j < counter; j++) {
         //procces is running
-        if(waitpid(pids[j],&status,WNOHANG) == 0){
-            printf("%s\n",history[j]);
+        if (waitpid(pids[j], &status, WNOHANG) == 0) {
+            printf("%s\n", history[j]);
         }
     }
     //updating the pid of the procces
-    pids[counter] =(int)getpid();
+    pids[counter] = (int) getpid();
     counter++;
 }
 
-void foreground(char** line) {
+int foreground(char **line) {
     int ret_code;
     val = fork();
-    pids[counter] = (int)val;
+    pids[counter] = (int) val;
     counter++;
     if (val == 0) {
         //in child
-        child = 1;
-        pid = (int)getpid();
-        printf("%d\n", pid);
         ret_code = execvp(line[0], line);
         if (ret_code == -1) {
-            fprintf(stderr, "Error in system call\n");
-        } else {
-            printf("exec succeed\n");
+            printf("exec failed\n");
         }
-
+        return 0;
     } else if (val < 0) {
-        fprintf(stderr, "Error in system call\n");
+        printf("exec failed\n");
     } else {
         //in father
         wait(&ret_code);
-
     }
+    return 1;
 }
 
-void background(char** line){
+void background(char **line, int length) {
     int ret_code;
-    pid_t val;
     val = fork();
-    pids[counter] = (int)val;
+    pids[counter] = (int) val;
     counter++;
-    if(val == 0){
+    if (val == 0) {
         //in child
-        child = 1;
-        printf("%d\n", (int)getpid());
         //remove the '&' from the command
-        line[size - 1] = NULL;
+        // child = 1;
+        line[length - 1] = NULL;
         ret_code = execvp(line[0], line);
-        if(ret_code == -1){
-            fprintf(stderr,"Error ib system call\n");
-        } else{
-            printf("exec succeed\n");
+        if (ret_code == -1) {
+            printf("exec failed\n");
         }
+    } else if (val < 0) {
+        printf("exec failed\n");
+    } else {
+        //in father
+        waitpid(-1, &ret_code, WNOHANG);
     }
 }
 
 
-void display_history(){
-    pids[counter] = (int)getpid();
-    //counter++;
-    for (int j = 0; j < counter; j++){
-        if(waitpid(pids[j],&status,WNOHANG) == 0 ||
-           (j == counter - 1 && strcmp((char*)history[j],"history") == 0)){
+void display_history() {
+    int j;
+    pids[counter] = (int) getpid();
+    counter++;
+    for (j = 0; j < counter; j++) {
+        if (waitpid(pids[j], &status, WNOHANG) == 0 ||
+            (strcmp((char *) history[j], "history") == 0)) {
             printf("%s RUNNING\n", history[j]);
         } else {
             //done
@@ -168,7 +213,7 @@ void display_history(){
 }
 
 void change_directory(const char *arg) {
-    pids[counter] = (int)getpid();
+    pids[counter] = (int) getpid();
     counter++;
     char cwd[256] = {0};
     getcwd(cwd, 256);
@@ -195,8 +240,9 @@ void change_directory(const char *arg) {
 }
 
 // Parse given input
-void parse(char *line, char **argv) {
+int parse(char *line, char **argv) {
     // Check if theres anymore input
+    int count = 0;
     while (*line != '\0') {
         while (*line == ' ' || *line == '\t' || *line == '\n')
             // Replace " " with zero
@@ -206,11 +252,13 @@ void parse(char *line, char **argv) {
         while (*line != '\0' && *line != ' ' &&
                *line != '\t' && *line != '\n')
             line++;
+        count++;
     }
     *argv = '\0';
+    return count;
 }
 
-// Execute the command
+/* Execute the commandI
 void execute(char **argv) {
     pid_t pid;
     int status;
@@ -229,7 +277,7 @@ void execute(char **argv) {
         while (wait(&status) != pid);
     }
 }
-
+*/
 
 /**
  * Create a new stack instance
